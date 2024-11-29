@@ -1,0 +1,223 @@
+:root {
+  --twitch-purple: #9146FF;
+  --twitch-dark: #0E0E10;
+  --twitch-light: #18181B;
+  --twitch-text: #EFEFF1;
+  --twitch-text-secondary: #ADADB8;
+}
+
+body {
+  background: var(--twitch-dark);
+  color: var(--twitch-text);
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+header {
+  background: var(--twitch-light);
+  color: var(--twitch-text);
+  height: 20vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 2.5%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header__title {
+  font-size: 35px;
+  font-weight: 600;
+  margin-bottom: .20em;
+  color: var(--twitch-purple);
+}
+
+.header__sub-title {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--twitch-text-secondary);
+}
+
+.real-time-interface {
+  padding: 1.25% 0 0 2.5%;
+}
+
+.real-time-interface__button {
+  display: flex;
+  padding: .75em 1.5em;
+  border-radius: .4rem;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  background: var(--twitch-purple);
+  color: white;
+  width: auto;
+  min-width: 120px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.real-time-interface__button:hover {
+  background: #772CE8;
+}
+
+.real-time-interface__title {
+  margin-bottom: .5em;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--twitch-text);
+}
+
+.real-time-interface__message {
+  text-align: left;
+  width: 95%;
+  margin-top: 1em;
+  font-size: 19px;
+  font-weight: 400;
+  background: var(--twitch-light);
+  color: var(--twitch-text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 1.5em;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.5;
+  transition: .3s ease-in;
+  max-height: 60vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--twitch-purple) var(--twitch-light);
+}
+
+/* Custom scrollbar for webkit browsers */
+.real-time-interface__message::-webkit-scrollbar {
+  width: 8px;
+}
+
+.real-time-interface__message::-webkit-scrollbar-track {
+  background: var(--twitch-light);
+}
+
+.real-time-interface__message::-webkit-scrollbar-thumb {
+  background-color: var(--twitch-purple);
+  border-radius: 4px;
+}
+
+/* Add these new styles at the top of your existing CSS */
+.navbar {
+  background: var(--twitch-light);
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar__logo {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--twitch-purple);
+  text-decoration: none;
+}
+
+/* Add these new styles */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--twitch-dark);
+}
+
+.login-form {
+  background: var(--twitch-light);
+  padding: 2rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-form h1 {
+  color: var(--twitch-purple);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--twitch-text);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: var(--twitch-dark);
+  color: var(--twitch-text);
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--twitch-purple);
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--twitch-purple);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.login-button:hover {
+  background: #772CE8;
+}
+
+.twitch-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--twitch-purple);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  gap: 8px;
+}
+
+.twitch-login-button:hover {
+  background: #772CE8;
+}
+
+.twitch-icon {
+  font-size: 1.5rem;
+}
+
+.login-description {
+  color: var(--twitch-text-secondary);
+  text-align: center;
+  margin-bottom: 2rem;
+}

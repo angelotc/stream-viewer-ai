@@ -1,0 +1,33 @@
+datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model Session {
+    id           String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId       String   @unique
+    accessToken  String
+    refreshToken String   @unique
+    expiresAt    DateTime
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+}
+
+// You might want to add these models later
+model Transcript {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String
+    text      String
+    createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String
+    message   String
+    createdAt DateTime @default(now())
+}
