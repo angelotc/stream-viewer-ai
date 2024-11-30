@@ -17,9 +17,9 @@ model User {
     createdAt     DateTime @default(now())
     updatedAt     DateTime @updatedAt
 
-    session     Session?
-    transcripts Transcript[]
-    messages    ChatMessage[]
+    session       Session?
+    messages      Message[]
+    subscriptions EventSubSubscription[]
 }
 
 model Session {
@@ -33,19 +33,31 @@ model Session {
     updatedAt    DateTime @updatedAt
 }
 
-// You might want to add these models later
-model Transcript {
+model EventSubSubscription {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     userId    String
     user      User     @relation(fields: [userId], references: [id])
-    text      String
+    type      String   // e.g., 'stream.online'
+    status    String   // e.g., 'enabled', 'disabled'
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId, type])
+}
+
+model Message {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String
+    user      User     @relation(fields: [userId], references: [id])
+    content   String
+    type      MessageType
+    metadata  Json?    // For additional data like username, confidence, duration
     createdAt DateTime @default(now())
 }
 
-model ChatMessage {
-    id        String   @id @default(auto()) @map("_id") @db.ObjectId
-    userId    String
-    user      User     @relation(fields: [userId], references: [id])
-    message   String
-    createdAt DateTime @default(now())
+enum MessageType {
+    CHAT        // Twitch chat message
+    TRANSCRIPT  // Streamer's speech transcript
+    SYSTEM      // System events like stream online/offline
+    BOT         // Bot's responses
 }

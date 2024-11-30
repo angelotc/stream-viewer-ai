@@ -1,18 +1,29 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Define public paths that don't require authentication
+const PUBLIC_PATHS = [
+  '/login',
+  '/api/auth/callback',
+  '/api/auth/login',
+  '/api/auth/validate',
+];
+
 export function middleware(request: NextRequest) {
-  const isLoggedIn = request.cookies.get('twitch_session');
-  const isAuthPath = request.nextUrl.pathname.startsWith('/login') || 
-                    request.nextUrl.pathname.startsWith('/api/auth');
+  // Check if the current path is public
+  const isPublicPath = PUBLIC_PATHS.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
   
-  // Allow auth-related paths without authentication
-  if (isAuthPath) {
+  // Allow public paths without authentication
+  if (isPublicPath) {
     return NextResponse.next();
   }
+
+  const session = request.cookies.get('twitch_session');
   
-  // Redirect to login if not authenticated
-  if (!isLoggedIn) {
+  // Redirect to login if no session exists
+  if (!session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   

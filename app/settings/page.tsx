@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { User } from '@prisma/client'
+import { Tooltip } from '../../ui/tooltip'
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -22,7 +23,7 @@ export default function SettingsPage() {
         }
         const data = await response.json()
         setUser(data.user)
-        setIsBotEnabled(data.settings?.isBotEnabled ?? false)
+        setIsBotEnabled(data.user?.isBotEnabled ?? false)
       } catch (error) {
         console.error('Failed to fetch settings:', error)
         setError('Failed to load settings. Please try again.')
@@ -72,8 +73,8 @@ export default function SettingsPage() {
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <div className="p-4 bg-red-50 text-red-700 rounded-lg">
           {error}
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="ml-4 text-sm underline hover:no-underline"
           >
             Try Again
@@ -85,42 +86,48 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold">Settings</h1>
-      
-      <div className="space-y-6 rounded-lg bg-white p-6 shadow">
-        <div>
-          <h2 className="text-xl font-semibold">User Information</h2>
-          <p className="mt-2 text-gray-600">Email: {user.email}</p>
-        </div>
+      <h1 className="mb-8 text-3xl font-bold text-white">Settings</h1>
 
-        <div className="border-t pt-6">
-          <h2 className="text-xl font-semibold">AI Assistant Settings</h2>
-          <div className="mt-4">
-            <label className="flex items-center space-x-3">
+      <div className="space-y-6 rounded-lg bg-gray-900 p-6 shadow-lg border border-gray-800">
+
+        <h2 className="text-xl font-semibold text-white">AI Assistant Settings</h2>
+        <div className="mt-4">
+          <Tooltip text="If enabled, 'ViewerAiBot' will automatically join your stream when you go live. If disabled, it will not join or perform any functions.">
+            <label className="flex items-center space-x-3 text-gray-300 cursor-help">
               <input
                 type="checkbox"
                 checked={isBotEnabled}
                 onChange={(e) => setIsBotEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
               />
               <span>Enable AI Assistant</span>
             </label>
-          </div>
+          </Tooltip>
         </div>
 
         {message && (
-          <div className={`mt-4 p-3 rounded ${message.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <div className={`mt-4 p-3 rounded ${message.includes('success')
+              ? 'bg-green-900 text-green-200'
+              : 'bg-red-900 text-red-200'
+            }`}>
             {message}
           </div>
         )}
 
-        <div className="border-t pt-6">
+        <div className="flex justify-end pt-4">
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 text-white rounded-lg shadow-sm transition-colors duration-150 ease-in-out flex items-center space-x-2"
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              'Save Changes'
+            )}
           </button>
         </div>
       </div>

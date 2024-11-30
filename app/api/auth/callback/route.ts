@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getIronSession } from 'iron-session'
 import prisma from '../../../../lib/prisma';
+import { TwitchEventSubService } from '../../../../lib/twitch-eventsub';
 
 const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID
 const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET
@@ -134,6 +135,16 @@ export async function GET(request: Request) {
         },
       })
 
+      // Subscribe to stream events if this is a new user or bot is enabled
+      if (user.isBotEnabled) {
+        try {
+          await TwitchEventSubService.subscribeToStreamOnline(user.id)
+        } catch (error) {
+          console.error('Failed to subscribe to stream events:', error)
+          // Don't throw error here, we still want to complete the auth flow
+        }
+      }
+
       // Create or update session in database
       await prisma.session.upsert({
         where: { userId: user.id },
@@ -150,17 +161,22 @@ export async function GET(request: Request) {
         },
       })
 
-      // Set session cookie
-      cookies().set('twitch_session', JSON.stringify({
-        userId: user.id,
+      // Set session using iron-session
+      const cookieStore = await cookies()
+      const session = await getIronSession(cookieStore, sessionConfig)
+      
+      session.user = {
+        id: user.id,
         accessToken: tokenData.access_token,
-      }), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-      })
+        login: user.login,
+        displayName: user.displayName,
+        email: user.email,
+      }
+      
+      await session.save()
 
+      // Redirect to home with success
+      return NextResponse.redirect(new URL('/login?login=success', request.url))
     } catch (error) {
       console.error('Database operation failed:', error)
       return new NextResponse('Failed to save session data', {
@@ -170,9 +186,6 @@ export async function GET(request: Request) {
         }
       })
     }
-
-    // Redirect to home with success
-    return NextResponse.redirect(new URL('/login?login=success', request.url))
   } catch (error) {
     console.error('Auth callback error:', error)
     return new NextResponse('Internal server error', {
