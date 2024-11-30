@@ -7,9 +7,24 @@ generator client {
     provider = "prisma-client-js"
 }
 
+model User {
+    id            String   @id @map("_id")  // Using Twitch ID directly
+    login         String   @unique
+    displayName   String
+    profileImage  String?
+    email         String?  @unique
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    session     Session?
+    transcripts Transcript[]
+    messages    ChatMessage[]
+}
+
 model Session {
     id           String   @id @default(auto()) @map("_id") @db.ObjectId
     userId       String   @unique
+    user         User     @relation(fields: [userId], references: [id])
     accessToken  String
     refreshToken String   @unique
     expiresAt    DateTime
@@ -21,6 +36,7 @@ model Session {
 model Transcript {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     userId    String
+    user      User     @relation(fields: [userId], references: [id])
     text      String
     createdAt DateTime @default(now())
 }
@@ -28,6 +44,7 @@ model Transcript {
 model ChatMessage {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     userId    String
+    user      User     @relation(fields: [userId], references: [id])
     message   String
     createdAt DateTime @default(now())
 }

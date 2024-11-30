@@ -1,19 +1,31 @@
 import { useRef, useState, useEffect } from 'react';
-import { RealtimeTranscriber } from 'assemblyai/streaming';
-import { BiHome, BiHistory, BiCog, BiLogoGithub, BiLogOut } from 'react-icons/bi';
-import dynamic from 'next/dynamic'
+import { RealtimeTranscriber, RealtimeTranscript } from 'assemblyai/streaming';
 import { useRouter } from 'next/router';
+import { Transcript } from '@prisma/client';
+
+interface RecordRTC {
+  startRecording: () => void;
+  pauseRecording: () => void;
+  // ... other methods
+}
+
+interface AssemblyAITranscript {
+  message_type: 'FinalTranscript' | 'PartialTranscript';
+  text: string;
+  audio_start: number;
+}
 
 // Create a client-side only component
 const App = () => {
   /** @type {React.MutableRefObject<RealtimeTranscriber>} */
-  const realtimeTranscriber = useRef(null)
+  const realtimeTranscriber = useRef<RealtimeTranscriber | null>(null)
   /** @type {React.MutableRefObject<any>} */
-  const recorder = useRef(null)
-  const [isRecording, setIsRecording] = useState(false)
-  const [transcript, setTranscript] = useState('')
-  const [isClient, setIsClient] = useState(false)
+  const recorder = useRef<any>(null)
+  const [isRecording, setIsRecording] = useState<boolean>(false)
+  const [transcript, setTranscript] = useState<string>('')
+  const [isClient, setIsClient] = useState<boolean>(false)
   const router = useRouter();
+  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
 
   useEffect(() => {
     setIsClient(true)
@@ -51,7 +63,23 @@ const App = () => {
     }
   };
 
-  const startTranscription = async (event) => {
+  const saveTranscript = async (text: string) => {
+    try {
+      const response = await fetch('/api/transcripts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+      const savedTranscript = await response.json();
+      setTranscripts(prev => [...prev, savedTranscript]);
+    } catch (error) {
+      console.error('Failed to save transcript:', error);
+    }
+  };
+
+  const startTranscription = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     
     if (!isClient) return;
@@ -64,33 +92,39 @@ const App = () => {
       sampleRate: 16_000,
     });
 
-    const texts = {};
-    realtimeTranscriber.current.on('transcript', transcript => {
-      let msg = '';
-      texts[transcript.audio_start] = transcript.text;
-      const keys = Object.keys(texts);
-      keys.sort((a, b) => a - b);
-      for (const key of keys) {
-        if (texts[key]) {
-          msg += ` ${texts[key]}`
-          console.log(msg)
+    const texts: Record<number, string> = {};
+    realtimeTranscriber.current!.on('transcript', (transcript: AssemblyAITranscript) => {
+      // only save when transcript is final
+      if (transcript.message_type === 'FinalTranscript') {
+        let msg = '';
+        texts[transcript.audio_start] = transcript.text;
+        const keys = Object.keys(texts);
+        keys.sort((a, b) => Number(a) - Number(b));
+        for (const key of keys) {
+          if (texts[Number(key)]) {
+            msg += ` ${texts[Number(key)]}`
+          }
         }
+        setTranscript(msg);
+        // Save transcript when it changes
+        console.log('Saving transcript:', transcript);
+        saveTranscript(msg);
       }
-      setTranscript(msg)
+      
     });
 
-    realtimeTranscriber.current.on('error', event => {
-      console.error(event);
-      realtimeTranscriber.current.close();
+    realtimeTranscriber.current?.on('error', (error: Error) => {
+      console.error(error);
+      realtimeTranscriber.current?.close();
       realtimeTranscriber.current = null;
     });
 
-    realtimeTranscriber.current.on('close', (code, reason) => {
+    realtimeTranscriber.current?.on('close', (code: number, reason: string) => {
       console.log(`Connection closed: ${code} ${reason}`);
       realtimeTranscriber.current = null;
     });
 
-    await realtimeTranscriber.current.connect();
+    await realtimeTranscriber.current!.connect();
 
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then((stream) => {
@@ -103,7 +137,7 @@ const App = () => {
           numberOfAudioChannels: 1,
           bufferSize: 4096,
           audioBitsPerSecond: 128000,
-          ondataavailable: async (blob) => {
+          ondataavailable: async (blob: Blob) => {
             if(!realtimeTranscriber.current) return;
             const buffer = await blob.arrayBuffer();
             realtimeTranscriber.current.sendAudio(buffer);
@@ -116,11 +150,11 @@ const App = () => {
     setIsRecording(true)
   }
 
-  const endTranscription = async (event) => {
+  const endTranscription = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     setIsRecording(false)
 
-    await realtimeTranscriber.current.close();
+    await realtimeTranscriber.current?.close();
     realtimeTranscriber.current = null;
 
     recorder.current.pauseRecording();
@@ -148,6 +182,14 @@ const App = () => {
       </div>
       <div className="real-time-interface__message">
         {transcript}
+      </div>
+      <div className="previous-transcripts">
+        {transcripts.map((t) => (
+          <div key={t.id} className="transcript-item">
+            <p>{t.text}</p>
+            <small>{new Date(t.createdAt).toLocaleString()}</small>
+          </div>
+        ))}
       </div>
     </div>
   );

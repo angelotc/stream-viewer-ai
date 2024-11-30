@@ -13,14 +13,7 @@ const sessionConfig = {
 
 export default async function handler(req, res) {
   const session = await getIronSession(req, res, sessionConfig);
-  console.log('Session in validate:', {
-    hasUser: !!session.user,
-    userId: session.user?.id,
-    hasAccessToken: !!session.user?.accessToken
-  });
   const access_token = session.user?.accessToken;
-
-  console.log('Received access token:', access_token?.substring(0, 10) + '...');
 
   if (!access_token) {
     return res.status(401).json({ error: 'No access token found' });

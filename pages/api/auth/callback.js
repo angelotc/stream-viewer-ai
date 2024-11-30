@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       throw new Error(tokenData.message);
     }
 
-    // Get user info
+    // Get user info from Twitch
     const userResponse = await fetch('https://api.twitch.tv/helix/users', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
@@ -61,43 +61,50 @@ export default async function handler(req, res) {
     });
 
     const userData = await userResponse.json();
-    console.log('userData', userData);
-    // Validate user data
+    
     if (!userData.data?.[0]) {
       throw new Error('Invalid user data received from Twitch');
     }
 
-    // First try to find existing session
-    const existingSession = await prisma.session.findFirst({
-      where: {
-        userId: userData.data[0].id
-      }
+    const twitchUser = userData.data[0];
+
+    // Create or update user in database
+    const user = await prisma.user.upsert({
+      where: { id: twitchUser.id },
+      update: {
+        login: twitchUser.login,
+        displayName: twitchUser.display_name,
+        profileImage: twitchUser.profile_image_url,
+        email: twitchUser.email,
+      },
+      create: {
+        id: twitchUser.id,
+        login: twitchUser.login,
+        displayName: twitchUser.display_name,
+        profileImage: twitchUser.profile_image_url,
+        email: twitchUser.email,
+      },
     });
 
-    // Update or create session
-    const dbSession = existingSession 
-      ? await prisma.session.update({
-          where: {
-            id: existingSession.id  // Using the unique id field
-          },
-          data: {
-            accessToken: tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
-            expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
-          },
-        })
-      : await prisma.session.create({
-          data: {
-            userId: userData.data[0].id,
-            accessToken: tokenData.access_token,
-            refreshToken: tokenData.refresh_token,
-            expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
-          },
-        });
+    // Create or update session
+    const dbSession = await prisma.session.upsert({
+      where: { userId: user.id },
+      update: {
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+      },
+      create: {
+        userId: user.id,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+      },
+    });
 
     // Store user data in iron session
     session.user = {
-      id: userData.data[0].id,
+      id: user.id,
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
       expiresAt: new Date(Date.now() + tokenData.expires_in * 1000)
@@ -111,20 +118,14 @@ export default async function handler(req, res) {
       expiresAt: session.user.expiresAt
     });
 
-    // Add more detailed logging
-    console.log('Auth success:', {
-      userId: userData.data[0].id,
-      tokenExpiry: new Date(Date.now() + tokenData.expires_in * 1000)
-    });
-
     // Redirect back to the app with success
     res.redirect('/?login=success');
   } catch (error) {
-    // Clear session on error
-    session.user = undefined;
-    await session.save();
+    // Use proper server-side error logging
+    console.log('[Auth Error]', error instanceof Error ? error.message : 'Unknown error');
     
-    console.error('Auth error:', error);
-    res.redirect('/login?error=' + encodeURIComponent(error.message));
+    // Redirect with error
+    const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+    res.redirect('/login?error=' + encodeURIComponent(errorMessage));
   }
 } 

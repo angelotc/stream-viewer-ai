@@ -1,6 +1,6 @@
 import { getIronSession } from 'iron-session';
 import { sessionConfig } from '../../../lib/session-config';
-import { refreshTwitchToken } from '../twitch/auth/refresh';
+import { refreshTwitchToken } from '../auth/refresh';
 
 // Higher-order function that combines iron-session with our auth check
 export function withAuth(handler) {
