@@ -68,7 +68,7 @@ export default async function handler(req, res) {
 
     const twitchUser = userData.data[0];
 
-    // Create or update user in database
+    // Create or update user in database with all fields including isBotEnabled
     const user = await prisma.user.upsert({
       where: { id: twitchUser.id },
       update: {
@@ -76,6 +76,7 @@ export default async function handler(req, res) {
         displayName: twitchUser.display_name,
         profileImage: twitchUser.profile_image_url,
         email: twitchUser.email,
+        // Don't update isBotEnabled here to preserve user's setting
       },
       create: {
         id: twitchUser.id,
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
         displayName: twitchUser.display_name,
         profileImage: twitchUser.profile_image_url,
         email: twitchUser.email,
+        isBotEnabled: true  // Set default value for new users
       },
     });
 
