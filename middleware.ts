@@ -3,8 +3,16 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const isLoggedIn = request.cookies.get('twitch_session');
+  const isAuthPath = request.nextUrl.pathname.startsWith('/login') || 
+                    request.nextUrl.pathname.startsWith('/api/auth');
   
-  if (!isLoggedIn && !request.nextUrl.pathname.startsWith('/login')) {
+  // Allow auth-related paths without authentication
+  if (isAuthPath) {
+    return NextResponse.next();
+  }
+  
+  // Redirect to login if not authenticated
+  if (!isLoggedIn) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
@@ -13,6 +21,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!login|api/auth|_next/static|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
-}; 
+};
